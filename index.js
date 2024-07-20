@@ -1,8 +1,11 @@
 const express = require('express')
 const morgan = require('morgan')
+const cors = require('cors')
 const app = express()
 
 app.use(express.json())
+// cors allows requests from all origins, so we can now use frontend from another localhost port
+app.use(cors())
 
 // creating a token for body to be shown in morgan log
 morgan.token('body', (request, response) => {
@@ -13,8 +16,9 @@ morgan.token('body', (request, response) => {
     }
     // otherwise returning empty
     return
-}
-)
+})
+
+// log configuration for 3.8.
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
 let persons = [
@@ -73,7 +77,8 @@ app.get('/info', (request, response) => {
 
 app.delete('/api/persons/:id', (request, response) => {
     const id = request.params.id
-    persons = persons.filter(person => person.id !== id)
+    persons = persons.filter(person => (person.id !== id))
+    console.log(persons)
     response.status(204).end()
 })
 
@@ -96,11 +101,12 @@ app.post('/api/persons', (request, response) => {
     }
 
     // if not, person is added to the phonebook with random id and
-    // to the persons array
+    // to the persons array. the id must be converted to string because
+    // json server does not support non-string ids 
     const person = {
         name: body.name,
         number: body.number,
-        id: Math.floor(Math.random() * 2000)
+        id: Math.floor(Math.random() * 2000).toString()
     }
 
     persons = persons.concat(person)
