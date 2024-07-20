@@ -6,6 +6,8 @@ const app = express()
 app.use(express.json())
 // cors allows requests from all origins, so we can now use frontend from another localhost port
 app.use(cors())
+// do we have a dist to show
+app.use(express.static('dist'))
 
 // creating a token for body to be shown in morgan log
 morgan.token('body', (request, response) => {
@@ -114,7 +116,7 @@ app.post('/api/persons', (request, response) => {
     console.log(persons)
 })
 
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
