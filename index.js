@@ -8,11 +8,13 @@ const app = express()
 
 const Person = require('./models/person')
 
+
+
+// do we have a dist to show
+app.use(express.static('dist'))
 app.use(express.json())
 // cors allows requests from all origins, so we can now use frontend from another localhost port
 app.use(cors())
-// do we have a dist to show
-app.use(express.static('dist'))
 
 // MORGAN LOGS
 // creating a token for body to be shown in morgan log
@@ -43,21 +45,16 @@ app.get('/api/persons', (request, response) => {
     })
 })
 
-app.get('/api/persons/:id', (request, response) => {
-
-    Person.findById(request.params.id).then(person => {
-        response.json(person)
-    })
-    /*
-    const id = request.params.id
-    const person = persons.find(person => person.id === id)
-
-    if (person) {
-        response.json(person)
-    } else {
-        response.status(404).end()
-    }
-        */
+app.get('/api/persons/:id', (request, response, next) => {
+    Person.findById(request.params.id)
+        .then(person => {
+            if (person) {
+                response.json(person)
+            } else {
+                response.status(404).end()
+            }
+        })
+        .catch(error => next(error))
 })
 
 app.get('/info', (request, response) => {
@@ -71,10 +68,11 @@ app.get('/info', (request, response) => {
 )
 
 app.delete('/api/persons/:id', (request, response) => {
-    const id = request.params.id
-    persons = persons.filter(person => person.id !== id)
-    console.log(persons)
-    response.status(204).end()
+    Person.findByIdAndDelete(request.params.id)
+        .then(result => {
+            response.status(204).end()
+        })
+        .catch(error => next(error))
 })
 
 app.post('/api/persons', (request, response) => {
@@ -115,6 +113,25 @@ app.post('/api/persons', (request, response) => {
     persons = persons.concat(person)
     console.log(persons)
 })
+
+/*
+app.use(unknownEndpoint) = (request, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+}
+    */
+
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+
+    if (error.name === 'CastError') {
+        return response.status(400).send({ error: 'malformatted id' })
+    }
+
+    next(error)
+}
+
+// tämä tulee kaikkien muiden middlewarejen ja routejen rekisteröinnin jälkeen!
+app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
