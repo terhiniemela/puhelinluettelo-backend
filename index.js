@@ -58,8 +58,6 @@ app.get('/api/persons/:id', (request, response) => {
         response.status(404).end()
     }
         */
-
-
 })
 
 app.get('/info', (request, response) => {
@@ -73,8 +71,8 @@ app.get('/info', (request, response) => {
 )
 
 app.delete('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    persons = persons.filter(person => (person.id !== id))
+    const id = request.params.id
+    persons = persons.filter(person => person.id !== id)
     console.log(persons)
     response.status(204).end()
 })
