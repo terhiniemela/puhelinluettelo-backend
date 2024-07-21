@@ -8,8 +8,6 @@ const app = express()
 
 const Person = require('./models/person')
 
-
-
 // do we have a dist to show
 app.use(express.static('dist'))
 app.use(express.json())
