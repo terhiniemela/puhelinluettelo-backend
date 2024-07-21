@@ -1,4 +1,4 @@
-// const Person = require('./models/person')
+require('dotenv').config()
 
 const express = require('express')
 const morgan = require('morgan')
@@ -6,39 +6,15 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 const app = express()
 
+const Person = require('./models/person')
+
 app.use(express.json())
 // cors allows requests from all origins, so we can now use frontend from another localhost port
 app.use(cors())
 // do we have a dist to show
 app.use(express.static('dist'))
 
-// MONGOOSE START 
-
-const password = process.argv[2]
-
-const url =
-    `mongodb+srv://tietokantatrh:${password}@cluster0.wdqdihi.mongodb.net/puhelinluettelo?retryWrites=true&w=majority&appName=Cluster0`
-
-mongoose.set('strictQuery', false)
-mongoose.connect(url)
-
-const personSchema = new mongoose.Schema({
-    name: String,
-    number: String,
-})
-
-// editing schema so we dont get fields _v and renaming _id to id
-personSchema.set('toJSON', {
-    transform: (document, returnedObject) => {
-        returnedObject.id = returnedObject._id.toString()
-        delete returnedObject._id
-        delete returnedObject.__v
-    }
-})
-
-const Person = mongoose.model('Person', personSchema)
-// mongoose part ends
-
+// MORGAN LOGS
 // creating a token for body to be shown in morgan log
 morgan.token('body', (request, response) => {
     // morgan token function is expected to return a string value, so
@@ -88,6 +64,7 @@ app.get('/api/persons', (request, response) => {
 })
 
 app.get('/api/persons/:id', (request, response) => {
+
     const id = request.params.id
     const person = persons.find(person => person.id === id)
 
@@ -119,6 +96,11 @@ app.delete('/api/persons/:id', (request, response) => {
 app.post('/api/persons', (request, response) => {
     const body = request.body
 
+    if (body.name === undefined) {
+        return response.status(400).json({ error: 'content missing' })
+    }
+
+    /*
     // if name or number is missing, responsing with 400 and error message
     if (!body.name || !body.number) {
         return response.status(400).json({
@@ -133,22 +115,24 @@ app.post('/api/persons', (request, response) => {
             error: 'name must be unique'
         })
     }
-
+*/
     // if not, person is added to the phonebook with random id and
     // to the persons array. the id must be converted to string because
     // json server does not support non-string ids 
-    const person = {
+    const person = new Person({
         name: body.name,
         number: body.number,
-        id: Math.floor(Math.random() * 2000).toString()
-    }
+    })
+
+    person.save().then(savedPerson => {
+        response.json(savedPerson)
+    })
 
     persons = persons.concat(person)
-    response.json(person)
     console.log(persons)
 })
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
