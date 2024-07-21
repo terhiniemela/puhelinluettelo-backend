@@ -1,6 +1,9 @@
+// const Person = require('./models/person')
+
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
+const mongoose = require('mongoose')
 const app = express()
 
 app.use(express.json())
@@ -8,6 +11,33 @@ app.use(express.json())
 app.use(cors())
 // do we have a dist to show
 app.use(express.static('dist'))
+
+// MONGOOSE START 
+
+const password = process.argv[2]
+
+const url =
+    `mongodb+srv://tietokantatrh:${password}@cluster0.wdqdihi.mongodb.net/puhelinluettelo?retryWrites=true&w=majority&appName=Cluster0`
+
+mongoose.set('strictQuery', false)
+mongoose.connect(url)
+
+const personSchema = new mongoose.Schema({
+    name: String,
+    number: String,
+})
+
+// editing schema so we dont get fields _v and renaming _id to id
+personSchema.set('toJSON', {
+    transform: (document, returnedObject) => {
+        returnedObject.id = returnedObject._id.toString()
+        delete returnedObject._id
+        delete returnedObject.__v
+    }
+})
+
+const Person = mongoose.model('Person', personSchema)
+// mongoose part ends
 
 // creating a token for body to be shown in morgan log
 morgan.token('body', (request, response) => {
@@ -52,7 +82,9 @@ app.get('/', (request, response) => {
 })
 
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({}).then(persons => {
+        response.json(persons)
+    })
 })
 
 app.get('/api/persons/:id', (request, response) => {
