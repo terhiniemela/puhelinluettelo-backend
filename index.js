@@ -2,7 +2,7 @@ require('dotenv').config()
 
 const express = require('express')
 const morgan = require('morgan')
-const cors = require('cors')
+//const cors = require('cors')
 const mongoose = require('mongoose')
 const app = express()
 
@@ -12,7 +12,7 @@ const Person = require('./models/person')
 app.use(express.static('dist'))
 app.use(express.json())
 // cors allows requests from all origins, so we can now use frontend from another localhost port
-app.use(cors())
+//app.use(cors())
 
 // MORGAN LOGS
 // creating a token for body to be shown in morgan log
@@ -65,9 +65,10 @@ app.get('/info', (request, response) => {
 }
 )
 
-app.delete('/api/persons/:id', (request, response) => {
+app.delete('/api/persons/:id', (request, response, next) => {
     Person.findByIdAndDelete(request.params.id)
         .then(result => {
+            console.log("delete")
             response.status(204).end()
         })
         .catch(error => next(error))
