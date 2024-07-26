@@ -30,7 +30,7 @@ morgan.token('body', (request, response) => {
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
 // 
-let persons = []
+//Let persons = []
 
 
 app.get('/', (request, response) => {
@@ -58,7 +58,6 @@ app.get('/api/persons/:id', (request, response, next) => {
 
 // info page has information how many people are logged to the phonebook and time of the page request
 app.get('/info', (request, response, next) => {
-
     // we want to have the time from the server of the request 
     const requestTime = new Date().toString()
 
@@ -76,9 +75,9 @@ app.get('/info', (request, response, next) => {
 app.delete('/api/persons/:id', (request, response, next) => {
     Person.findByIdAndDelete(request.params.id)
         .then(result => {
-            console.log("delete")
             response.status(204).end()
         }).catch(error => next(error))
+
 })
 
 app.post('/api/persons', (request, response, next) => {
@@ -96,25 +95,23 @@ app.post('/api/persons', (request, response, next) => {
     person.save().then(savedPerson => {
         response.json(savedPerson)
     }).catch(error => next(error))
-
-    persons = persons.concat(person)
-    console.log(persons)
 })
 
 app.put('/api/persons/:id', (request, response, next) => {
     const { name, number } = request.body
+
     // findbyidandupdate needs a normal javascript object, not an object
-    // made by Person constructor function
-    // validators check if content is missing and 
+    // made by Person constructor function validators check if content is missing and 
+
     Person.findByIdAndUpdate(
         request.params.id,
         { name, number },
         { new: true, runValidators: true, context: 'query' }
-    )
-        .then(updatedPerson => {
-            response.json(updatedPerson)
-        })
-        .catch(error => next(error))
+    ).then(updatedPerson => {
+        response.json(updatedPerson)
+        console.log(updatedPerson, 'crshing after response')
+    }).catch(error => next(error))
+
 })
 
 const unknownEndpoint = (request, response) => {
@@ -122,7 +119,6 @@ const unknownEndpoint = (request, response) => {
 }
 
 app.use(unknownEndpoint)
-
 
 const errorHandler = (error, request, response, next) => {
     console.error(error.message)
@@ -133,7 +129,6 @@ const errorHandler = (error, request, response, next) => {
     else if (error.name === 'ValidationError') {
         return response.status(400).json({ error: error.message })
     }
-
     next(error)
 }
 
