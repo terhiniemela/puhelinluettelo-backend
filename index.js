@@ -37,6 +37,7 @@ app.get('/', (request, response) => {
     response.send('<h1>Hello World!</h1>')
 })
 
+// lists phonebook content from db
 app.get('/api/persons', (request, response) => {
     Person.find({}).then(persons => {
         response.json(persons)
@@ -55,15 +56,24 @@ app.get('/api/persons/:id', (request, response, next) => {
         .catch(error => next(error))
 })
 
-app.get('/info', (request, response) => {
-    // info page consists of the size of the phonebook and time of page request
-    const message = '<div>Phonebook has info for ' + persons.length + ' people</div>'
+
+// info page has information how many people are logged to the phonebook and time of the page request
+app.get('/info', (request, response, next) => {
+
     // we want to have the time from the server of the request 
     const requestTime = new Date().toString()
-    console.log(requestTime)
-    response.send(message + requestTime)
-}
-)
+
+    Person.estimatedDocumentCount({})
+        .then(result => {
+            const message = 'Phonebook has info for ' + result + ' people'
+            response.json({
+                message,
+                requestTime
+            })
+        })
+        .catch(error => next(error))
+
+})
 
 app.delete('/api/persons/:id', (request, response, next) => {
     Person.findByIdAndDelete(request.params.id)
@@ -81,9 +91,8 @@ app.post('/api/persons', (request, response) => {
         return response.status(400).json({ error: 'content missing' })
     }
 
-    /*
     // if name or number is missing, responsing with 400 and error message
-    if (!body.name || !body.number) {
+    else if (!body.name || !body.number) {
         return response.status(400).json({
             error: 'name or number missing'
         })
@@ -96,7 +105,7 @@ app.post('/api/persons', (request, response) => {
             error: 'name must be unique'
         })
     }
-*/
+
     // if not, person is added to the phonebook with random id and
     // to the persons array. the id must be converted to string because
     // json server does not support non-string ids 
@@ -113,11 +122,29 @@ app.post('/api/persons', (request, response) => {
     console.log(persons)
 })
 
-/*
-app.use(unknownEndpoint) = (request, response) => {
+app.put('/api/persons/:id', (request, response, next) => {
+    const body = request.body
+    console.log(body)
+    const person = {
+        name: body.name,
+        number: body.number,
+    }
+
+    // findbyidandupdate needs a normal javascript object, not an object
+    // made by Person constructor function 
+    Person.findByIdAndUpdate(request.params.id, person, { new: true })
+        .then(updatedPerson => {
+            response.json(updatedPerson)
+        })
+        .catch(error => next(error))
+})
+
+const unknownEndpoint = (request, response) => {
     response.status(404).send({ error: 'unknown endpoint' })
 }
-    */
+
+app.use(unknownEndpoint)
+
 
 const errorHandler = (error, request, response, next) => {
     console.error(error.message)
