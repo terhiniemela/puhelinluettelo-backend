@@ -84,31 +84,13 @@ app.delete('/api/persons/:id', (request, response, next) => {
         .catch(error => next(error))
 })
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
     const body = request.body
 
     if (body.name === undefined) {
         return response.status(400).json({ error: 'content missing' })
     }
 
-    // if name or number is missing, responsing with 400 and error message
-    else if (!body.name || !body.number) {
-        return response.status(400).json({
-            error: 'name or number missing'
-        })
-    }
-
-    // checking if name is already listed in the phonebook, true if found
-    const nameCheck = persons.find(person => person.name === body.name)
-    if (nameCheck) {
-        return response.status(400).json({
-            error: 'name must be unique'
-        })
-    }
-
-    // if not, person is added to the phonebook with random id and
-    // to the persons array. the id must be converted to string because
-    // json server does not support non-string ids 
     const person = new Person({
         name: body.name,
         number: body.number,
@@ -117,22 +99,19 @@ app.post('/api/persons', (request, response) => {
     person.save().then(savedPerson => {
         response.json(savedPerson)
     })
+        .catch(error => next(error))
 
-    persons = persons.concat(person)
+    //persons = persons.concat(person)
     console.log(persons)
 })
 
 app.put('/api/persons/:id', (request, response, next) => {
-    const body = request.body
-    console.log(body)
-    const person = {
-        name: body.name,
-        number: body.number,
-    }
+    const { name, number } = request.body
 
     // findbyidandupdate needs a normal javascript object, not an object
     // made by Person constructor function 
-    Person.findByIdAndUpdate(request.params.id, person, { new: true })
+    Person.findByIdAndUpdate(request.params.id, { name, number },
+        { new: true, runValidators: true, context: 'query' })
         .then(updatedPerson => {
             response.json(updatedPerson)
         })
@@ -151,6 +130,9 @@ const errorHandler = (error, request, response, next) => {
 
     if (error.name === 'CastError') {
         return response.status(400).send({ error: 'malformatted id' })
+    }
+    else if (error.name === 'ValidationError') {
+        return response.status(400).json({ error: error.message })
     }
 
     next(error)
