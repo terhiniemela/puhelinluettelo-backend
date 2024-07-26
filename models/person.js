@@ -17,11 +17,17 @@ mongoose.connect(url)
 const personSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true
+        minlength: 3,
+        required: [true, 'phone number required']
     },
     number: {
         type: String,
-        required: true
+        minlength: 8,
+        required: true,
+        validate: {
+            validator: (number) => { return /\d{2,3}-\d{4,}/.test(number); },
+            message: 'invalid phone number format, correct format xx-xxxxxx or xxx-xxxxx'
+        }
     }
 })
 
